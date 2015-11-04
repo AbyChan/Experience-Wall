@@ -7,7 +7,8 @@
                  [markdown-clj "0.9.77"]
                  [io.aviso/pretty "0.1.19"]
                  [org.clojure/tools.logging "0.3.1"]
-                 [me.raynes/fs "1.4.6"]]
+                 [me.raynes/fs "1.4.6"]
+                 [cheshire "5.5.0"]]
   :plugins [[lein-environ "1.0.0"]]
   :profiles {:dev {:env {:squiggly {:checkers [:eastwood]
                                     :eastwood-exclude-linters [:unlimited-use]}}}}

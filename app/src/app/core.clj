@@ -5,8 +5,11 @@
         [io.aviso.ansi]
         [io.aviso.logging])
   (:require [clojure.java.io :as io]
-            [me.raynes.fs :as fs]))
+            [me.raynes.fs :as fs]
+            [cheshire.core :refer :all]))
 
+
+(def default-config-file "_config.json")
 
 
 (defn show-banner []
@@ -18,13 +21,27 @@
                  ["Usage:"
                   "Ewall [command]"])))
 
+(defn read-default-config []
+  (parse-string (slurp (io/file
+                        (io/resource 
+                         default-config-file))) true))
+
+(def default-config (read-default-config))
+
+(defn tesxt []
+  (println (:url default-config)))
+
 (defn new-ewall
   [rest]
-  (fs/copy-dir "temperlate" "bb"))
+  (if (< (count rest) 1)
+    (do
+      (fs/mkdir (:source_dir default-config))
+      (fs/mkdir (:public_dir default-config))
+)))
 
 (defn new-experience
   [rest]
-  (println))
+  (tesxt))
 
 (defn start-server
   [rest]
