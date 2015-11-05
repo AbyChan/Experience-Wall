@@ -22,26 +22,35 @@
                   "Ewall [command]"])))
 
 (defn read-default-config []
-  (parse-string (slurp (io/file
-                        (io/resource 
-                         default-config-file))) true))
+  (parse-string (slurp (io/resource
+                        default-config-file)) true))
 
 (def default-config (read-default-config))
 
-(defn tesxt []
-  (println (:url default-config)))
+
+(defn current-path []
+  (str fs/*cwd*))
+
+(defn join-path [parent path]
+  (str parent "/" path))
+
+(defn join-path-cwd [path]
+  (print path)
+  (println (join-path (current-path) path))
+  (join-path (current-path) path))
 
 (defn new-ewall
   [rest]
   (if (< (count rest) 1)
     (do
-      (fs/mkdir (:source_dir default-config))
-      (fs/mkdir (:public_dir default-config))
-)))
+      (fs/mkdir (join-path-cwd (:source_dir default-config)))
+      (fs/mkdir (join-path-cwd (:public_dir default-config)))
+      (fs/spit (join-path-cwd default-config-file) "fuck")
+      )))
 
 (defn new-experience
   [rest]
-  (tesxt))
+  (println))
 
 (defn start-server
   [rest]
