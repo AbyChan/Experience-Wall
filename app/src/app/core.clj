@@ -27,16 +27,17 @@
 
 (def default-config (read-default-config))
 
+(def public-dir (:public_dir default-config))
+
 
 (defn current-path []
   (str fs/*cwd*))
 
-(defn join-path [parent path]
-  (str parent "/" path))
+(defn join-path [& args]
+  (join "/" args))
 
 (defn join-path-cwd [path]
-  (print path)
-  (println (join-path (current-path) path))
+  (println path)
   (join-path (current-path) path))
 
 (defn new-ewall
@@ -48,7 +49,11 @@
       (spit (join-path-cwd default-config-file) (slurp (io/resource
                                                         default-config-file))))
     (do
-      ())))
+      (fs/mkdir (join-path-cwd (first rest)))
+      (fs/mkdir (join-path-cwd (join-path (first rest) (:source_dir default-config))))
+      (fs/mkdir (join-path-cwd (join-path (first rest) (:public_dir default-config))))
+      (spit (join-path-cwd (join-path (first rest) default-config-file)) (slurp (io/resource
+                                       default-config-file))))))
 
 (defn new-experience
   [rest]
