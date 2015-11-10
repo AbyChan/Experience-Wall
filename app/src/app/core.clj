@@ -25,6 +25,8 @@
   (parse-string (slurp (io/resource
                         default-config-file)) true))
 
+(defn read-project-config [])
+
 (def default-config (read-default-config))
 
 (def public-dir (:public_dir default-config))
@@ -33,12 +35,59 @@
 (defn current-path []
   (str fs/*cwd*))
 
-(defn join-path [& args]
+(defn join-path
+  [& args]
   (join "/" args))
 
-(defn join-path-cwd [path]
+(defn join-path-cwd
+  [path]
   (println path)
   (join-path (current-path) path))
+
+(defn list-dirs
+  [path]
+  (filter fs/directory? (fs/list-dir path)))
+
+(defn list-files
+  [path]
+  (filter fs/file? (fs/list-dir path)))
+
+
+(defn paths-to-name
+  [paths]
+  (map fs/name paths))
+
+(defn paths-to-str
+  [paths]
+  (map str paths))
+
+
+(defn walk-source-dir
+  [root dirs files]
+  (println "x")
+  (println (str root))
+  (println (str dirs))
+  (println (first files)))
+
+(defn check-in-wall-project []
+  (if-not fs/exists (join-path (current-path) default-config-file)
+          (do
+            (println
+             (str
+              (blod
+               (red "Sorry, I can not found \"_config.json\" file!"))))
+            (System/exit 0))))
+
+(defn check-has-source []
+  )
+
+(defn release-wall [path]
+  (check-in-wall-project)
+  (let [source-sub-dirs (paths-to-str (list-dirs))])
+  (fs/walk walk-source-dir path))
+
+(release-wall "/home/tyan/DEMO/BNBB/source")
+
 
 (defn new-ewall
   [rest]
