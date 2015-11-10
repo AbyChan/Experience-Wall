@@ -45,8 +45,10 @@
     (do
       (fs/mkdir (join-path-cwd (:source_dir default-config)))
       (fs/mkdir (join-path-cwd (:public_dir default-config)))
-      (fs/spit (join-path-cwd default-config-file) "fuck")
-      )))
+      (spit (join-path-cwd default-config-file) (slurp (io/resource
+                                                        default-config-file))))
+    (do
+      ())))
 
 (defn new-experience
   [rest]
