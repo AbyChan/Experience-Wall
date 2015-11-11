@@ -25,7 +25,7 @@
   (parse-string (slurp (io/resource
                         default-config-file)) true))
 
-(defn read-project-config [])
+
 
 (def default-config (read-default-config))
 
@@ -70,23 +70,73 @@
   (println (first files)))
 
 (defn check-in-wall-project []
-  (if-not fs/exists (join-path (current-path) default-config-file)
+  (if-not fs/exists? (join-path (current-path) default-config-file)
           (do
             (println
              (str
-              (blod
+              (bold
                (red "Sorry, I can not found \"_config.json\" file!"))))
             (System/exit 0))))
 
-(defn check-has-source []
-  )
+(defn read-project-config
+  [path]
+  (parse-string (slurp (io/file
+                          (join-path path default-config-file))) true))
+
+(defn check-has-source
+  [path config]
+  (if-not (fs/directory? (join-path path (:source_dir config)))
+          (do
+            (println (:source_dir config))
+            (println
+             (str
+              (bold
+               (red "Sorry, I can not found your source dir !"))))
+            (System/exit 0))))
+
+(defn test-md-file [path]
+  (if (re-find (re-pattern "\\.md$") path)
+    true
+    false))
+
+(defn take-file-body-name
+  [path]
+  (nth (re-find #"([\s\S]+/)([A-Za-z0-9-_\s]+)(.md$)" path) 2))
+
+(take-file-body-name "/home/tyan/DEMO/BNBB/source.md")
+
+(defn list-md-file [path]
+  (filter test-md-file (paths-to-str (list-files path))))
+
+(defn check-path-exist-mkdir
+  [path]
+  (if-not (fs/directory? path)
+    (fs/mkdirs path)))
+
+
+(defn release-dir-file
+  [from-path to-path]
+  (check-path-exist-mkdir to-path)
+  (loop [files (list-md-file from-path)]
+    (if (>= 1 (count files))
+      (let [md-file (first files)
+            file-body-name (take-file-body-name md-file)]
+        (println md-file)
+        (md-to-html md-file (str to-path "/" file-body-name ".html")))
+      (recur (rest files)))))
+
 
 (defn release-wall [path]
   (check-in-wall-project)
-  (let [source-sub-dirs (paths-to-str (list-dirs))])
+  (let [source-sub-dirs (paths-to-str (list-dirs))
+        config (read-project-config)
+        wall-path (current-path)]
+    (check-has-source wall-path config)
+    (let [wall-dirs (list-dirs wall-path)]
+      (release-dir-file (join-path wall-path (:source_dir config))
+                        (:public_dir config))))
   (fs/walk walk-source-dir path))
 
-(release-wall "/home/tyan/DEMO/BNBB/source")
 
 
 (defn new-ewall
