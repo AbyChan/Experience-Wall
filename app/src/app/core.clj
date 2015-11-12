@@ -6,11 +6,19 @@
         [io.aviso.logging])
   (:require [clojure.java.io :as io]
             [me.raynes.fs :as fs]
-            [cheshire.core :refer :all]))
+            [cheshire.core :refer :all]
+            [clj-time.core :as t]
+            [clj-time.local :as l]
+            [clj-time.format :as f]
+            [clojure.string :as str]))
 
 
 (def default-config-file "_config.json")
 
+(def custom-formatter (f/formatter "yyyy-MM-dd"))
+
+(defn now-str []
+  (f/unparse custom-formatter (l/local-now)))
 
 (defn show-banner []
   (println "EXPERIENCE WALL"))
@@ -81,7 +89,7 @@
 (defn read-project-config
   [path]
   (parse-string (slurp (io/file
-                          (join-path path default-config-file))) true))
+                        (join-path path default-config-file))) true))
 
 (defn check-has-source
   [path config]
@@ -125,7 +133,6 @@
         (md-to-html md-file (str to-path "/" file-body-name ".html")))
       (recur (rest files)))))
 
-
 (defn release-wall [path]
   (check-in-wall-project)
   (let [source-sub-dirs (paths-to-str (list-dirs))
@@ -137,7 +144,22 @@
                         (:public_dir config))))
   (fs/walk walk-source-dir path))
 
-
+;; (defn parse-experience-file
+;;   [file-path]
+;;   (let [raw-file-content (slurp (io/file file-path))
+;;         info-str (first (str/split raw-file-content #"!---"))
+;;         info-rows (str/split info-str #"\\n")
+;;         info-map (loop [infos info-rows
+;;                         result {}]
+;;                    (let [info (str/split (first infos) #":")]
+;;                      (if (= (count infos) 1)
+;;                        (assoc result (first info) (if (or (second info)
+;;                                                           (= (str/trim (second info) "")))
+;;                                                     (second info)
+;;                                                     ""))
+;;                        (recur (rest infos) result)))
+;;                    )]
+;;     (println info-map)))
 
 (defn new-ewall
   [rest]
@@ -156,7 +178,18 @@
 
 (defn new-experience
   [rest]
-  (println))
+  (if (< (count rest) 1)
+    (println
+     (str
+      (bold
+       (red "Sorry, you must input experience name!"))))
+    (let [experience-name (first rest)]
+      (spit (join-path-cwd (str experience-name ".md"))
+            (str
+             "--title:" experience-name "\n"
+             "--time:" (now-str) "\n"
+             "--tag:\n"
+             "!---")))))
 
 (defn start-server
   [rest]
