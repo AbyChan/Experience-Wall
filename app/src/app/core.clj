@@ -94,13 +94,13 @@
 (defn check-has-source
   [path config]
   (if-not (fs/directory? (join-path path (:source_dir config)))
-          (do
-            (println (:source_dir config))
-            (println
-             (str
-              (bold
-               (red "Sorry, I can not found your source dir !"))))
-            (System/exit 0))))
+    (do
+      (println (:source_dir config))
+      (println
+       (str
+        (bold
+         (red "Sorry, I can not found your source dir !"))))
+      (System/exit 0))))
 
 (defn test-md-file [path]
   (if (re-find (re-pattern "\\.md$") path)
@@ -144,22 +144,36 @@
                         (:public_dir config))))
   (fs/walk walk-source-dir path))
 
-;; (defn parse-experience-file
-;;   [file-path]
-;;   (let [raw-file-content (slurp (io/file file-path))
-;;         info-str (first (str/split raw-file-content #"!---"))
-;;         info-rows (str/split info-str #"\\n")
-;;         info-map (loop [infos info-rows
-;;                         result {}]
-;;                    (let [info (str/split (first infos) #":")]
-;;                      (if (= (count infos) 1)
-;;                        (assoc result (first info) (if (or (second info)
-;;                                                           (= (str/trim (second info) "")))
-;;                                                     (second info)
-;;                                                     ""))
-;;                        (recur (rest infos) result)))
-;;                    )]
-;;     (println info-map)))
+(defn parse-experience-file
+  [file-path]
+  (let [raw-file-content (slurp (io/file file-path))
+        info-str (first (str/split raw-file-content #"!---"))
+        info-rows (str/split info-str #"\n")
+        info-map (loop [infos info-rows
+                        result {}]
+                   (let [info (str/split (first infos) #":")]
+                     (if (= (count infos) 1)
+                       (assoc result
+                              (subs (first info) 2)
+                              (if (second info)
+                                (if (= (str/trim (second info)) "")
+                                  ""
+                                  (second info))
+                                ""))
+                       (recur (rest infos)
+                              (assoc result
+                                     (subs (first info) 2)
+                                     (if (second info)
+                                       (if (= (str/trim (second info)) "")
+                                         ""
+                                         (second info))
+                                       ""))))))
+        title (get info-map "title")
+        date (get info-map "date")
+        tag (map str/trim (str/split (get info-map "tag") #","))]
+    (println tag)))
+
+
 
 (defn new-ewall
   [rest]
@@ -174,7 +188,7 @@
       (fs/mkdir (join-path-cwd (join-path (first rest) (:source_dir default-config))))
       (fs/mkdir (join-path-cwd (join-path (first rest) (:public_dir default-config))))
       (spit (join-path-cwd (join-path (first rest) default-config-file)) (slurp (io/resource
-                                       default-config-file))))))
+                                                                                 default-config-file))))))
 
 (defn new-experience
   [rest]
@@ -187,7 +201,7 @@
       (spit (join-path-cwd (str experience-name ".md"))
             (str
              "--title:" experience-name "\n"
-             "--time:" (now-str) "\n"
+             "--date:" (now-str) "\n"
              "--tag:\n"
              "!---")))))
 
@@ -210,4 +224,4 @@
         (= command "release") (release-experience (rest args))
         (= command "serve") (start-server (rest args))
         (= command "help") (show-help)
-            :else (show-help)))))
+        :else (show-help)))))
