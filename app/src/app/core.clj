@@ -47,7 +47,6 @@
 
 (defn join-path-cwd
   [path]
-  (println path)
   (join-path (current-path) path))
 
 (defn list-dirs
@@ -112,6 +111,7 @@
   (nth (re-find #"([\s\S]+/)([A-Za-z0-9-_\s]+)(.md$)" path) 2))
 
 ;;(take-file-body-name "/home/tyan/DEMO/BNBB/source.md")
+;;(take-file-body-name "/home/tyan/DEMO/BNBB")
 
 (defn list-md-file [path]
   (filter test-md-file (paths-to-str (list-files path))))
@@ -120,6 +120,18 @@
   [path]
   (if-not (fs/directory? path)
     (fs/mkdirs path)))
+
+;; (defn release-dir-file
+;;   [from-path to-path]
+;;   (check-path-exist-mkdir to-path)
+;;   (loop [files (list-md-file from-path)]
+;;     (if (>= 1 (count files))
+;;       (let [md-file (first files)
+;;             file-body-name (take-file-body-name md-file)]
+;;         (println md-file)
+;;         (md-to-html md-file (str to-path "/" file-body-name ".html")))
+;;       (recur (rest files)))))
+
 
 (defn release-dir-file
   [from-path to-path]
@@ -132,6 +144,8 @@
         (md-to-html md-file (str to-path "/" file-body-name ".html")))
       (recur (rest files)))))
 
+
+
 (defn release-wall [path]
   (check-in-wall-project path)
   (let [config (read-project-config path)
@@ -142,7 +156,8 @@
       (release-dir-file (join-path wall-path (:source_dir config))
                         (join-path wall-path (:public_dir config))))))
 
-(release-wall "/Users/tyan/DEMO/ewall")
+;;(release-wall "/Users/tyan/DEMO/ewall")
+(release-wall "/home/tyan/DEMO/BNBB")
 
 (defn parse-experience-file
   [file-path]
