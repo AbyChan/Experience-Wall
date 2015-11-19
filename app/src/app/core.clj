@@ -15,6 +15,7 @@
 
 (def default-config-file "_config.json")
 
+
 (def custom-formatter (f/formatter "yyyy-MM-dd"))
 
 (defn now-str []
@@ -33,12 +34,9 @@
   (parse-string (slurp (io/resource
                         default-config-file)) true))
 
-
-
 (def default-config (read-default-config))
 
 (def public-dir (:public_dir default-config))
-
 
 (defn current-path []
   (str fs/*cwd*))
@@ -77,14 +75,15 @@
   (println (str dirs))
   (println (first files)))
 
-(defn check-in-wall-project []
-  (if-not fs/exists? (join-path (current-path) default-config-file)
+(defn check-in-wall-project [path]
+  (if-not (fs/exists? (join-path path default-config-file))
           (do
             (println
              (str
               (bold
                (red "Sorry, I can not found \"_config.json\" file!"))))
-            (System/exit 0))))
+            ;;(System/exit 0)
+            )))
 
 (defn read-project-config
   [path]
@@ -100,7 +99,8 @@
        (str
         (bold
          (red "Sorry, I can not found your source dir !"))))
-      (System/exit 0))))
+      ;;(System/exit 0)
+      )))
 
 (defn test-md-file [path]
   (if (re-find (re-pattern "\\.md$") path)
@@ -111,7 +111,7 @@
   [path]
   (nth (re-find #"([\s\S]+/)([A-Za-z0-9-_\s]+)(.md$)" path) 2))
 
-(take-file-body-name "/home/tyan/DEMO/BNBB/source.md")
+;;(take-file-body-name "/home/tyan/DEMO/BNBB/source.md")
 
 (defn list-md-file [path]
   (filter test-md-file (paths-to-str (list-files path))))
@@ -120,7 +120,6 @@
   [path]
   (if-not (fs/directory? path)
     (fs/mkdirs path)))
-
 
 (defn release-dir-file
   [from-path to-path]
@@ -134,20 +133,22 @@
       (recur (rest files)))))
 
 (defn release-wall [path]
-  (check-in-wall-project)
-  (let [source-sub-dirs (paths-to-str (list-dirs))
-        config (read-project-config)
-        wall-path (current-path)]
+  (check-in-wall-project path)
+  (let [config (read-project-config path)
+        wall-path path]
     (check-has-source wall-path config)
+    ;;TODO put all dir
     (let [wall-dirs (list-dirs wall-path)]
       (release-dir-file (join-path wall-path (:source_dir config))
-                        (:public_dir config))))
-  (fs/walk walk-source-dir path))
+                        (join-path wall-path (:public_dir config))))))
+
+(release-wall "/Users/tyan/DEMO/ewall")
 
 (defn parse-experience-file
   [file-path]
   (let [raw-file-content (slurp (io/file file-path))
-        info-str (first (str/split raw-file-content #"!---"))
+        info-str (first (str/split raw-file-content #"#---"))
+        experience-str (second (str/split raw-file-content #"#---"))
         info-rows (str/split info-str #"\n")
         info-map (loop [infos info-rows
                         result {}]
@@ -172,8 +173,6 @@
         date (get info-map "date")
         tag (map str/trim (str/split (get info-map "tag") #","))]
     (println tag)))
-
-
 
 (defn new-ewall
   [rest]
@@ -203,7 +202,7 @@
              "--title:" experience-name "\n"
              "--date:" (now-str) "\n"
              "--tag:\n"
-             "!---")))))
+             "#---")))))
 
 (defn start-server
   [rest]
