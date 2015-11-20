@@ -121,43 +121,6 @@
   (if-not (fs/directory? path)
     (fs/mkdirs path)))
 
-;; (defn release-dir-file
-;;   [from-path to-path]
-;;   (check-path-exist-mkdir to-path)
-;;   (loop [files (list-md-file from-path)]
-;;     (if (>= 1 (count files))
-;;       (let [md-file (first files)
-;;             file-body-name (take-file-body-name md-file)]
-;;         (println md-file)
-;;         (md-to-html md-file (str to-path "/" file-body-name ".html")))
-;;       (recur (rest files)))))
-
-
-(defn release-dir-file
-  [from-path to-path]
-  (check-path-exist-mkdir to-path)
-  (loop [files (list-md-file from-path)]
-    (if (>= 1 (count files))
-      (let [md-file (first files)
-            file-body-name (take-file-body-name md-file)]
-        (println md-file)
-        (md-to-html md-file (str to-path "/" file-body-name ".html")))
-      (recur (rest files)))))
-
-
-
-(defn release-wall [path]
-  (check-in-wall-project path)
-  (let [config (read-project-config path)
-        wall-path path]
-    (check-has-source wall-path config)
-    ;;TODO put all dir
-    (let [wall-dirs (list-dirs wall-path)]
-      (release-dir-file (join-path wall-path (:source_dir config))
-                        (join-path wall-path (:public_dir config))))))
-
-;;(release-wall "/Users/tyan/DEMO/ewall")
-(release-wall "/home/tyan/DEMO/BNBB")
 
 (defn parse-experience-file
   [file-path]
@@ -187,7 +150,63 @@
         title (get info-map "title")
         date (get info-map "date")
         tag (map str/trim (str/split (get info-map "tag") #","))]
-    (println tag)))
+    {:info info-map
+     :experience (md-to-html-string experience-str)}))
+
+;;(println (parse-experience-file "/Users/tyan/DEMO/ewall/source/sds.md"))
+
+
+
+
+(defn package-experience
+  [files-path per-page name]
+
+  (let [experience-packages-path (partition-all per-page files-path)]
+    (map (fn
+           [experience-package-path]
+           (map println experience-package-path)) experience-packages-path)
+    
+    )
+  
+  )
+
+
+(release-wall "/Users/tyan/DEMO/ewall")
+
+(defn release-dir-file
+  [from-path to-path per-page name]
+  (check-path-exist-mkdir to-path)
+  (package-experience (list-md-file from-path) per-page name))
+
+
+;; (defn release-dir-file
+;;   [from-path to-path]
+;;   (check-path-exist-mkdir to-path)
+;;   (loop [files (list-md-file from-path)]
+;;     (if (>= 1 (count files))
+;;       (let [md-file (first files)
+;;             file-body-name (take-file-body-name md-file)]
+;;         (println md-file)
+;;         (md-to-html md-file (str to-path "/" file-body-name ".html")))
+;;       (recur (rest files)))))
+
+
+(defn release-wall [path]
+  (check-in-wall-project path)
+  (let [config (read-project-config path)
+        wall-path path]
+    (check-has-source wall-path config)
+    ;;TODO put all dir
+    (let [wall-dirs (list-dirs wall-path)]
+      (release-dir-file (join-path wall-path (:source_dir config))
+                        (join-path wall-path (:public_dir config))
+                        (:per_page config)
+                        "uncategorized"))))
+
+
+;;(release-wall "/home/tyan/DEMO/BNBB")
+
+
 
 (defn new-ewall
   [rest]
