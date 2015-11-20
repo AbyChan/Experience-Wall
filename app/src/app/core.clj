@@ -16,10 +16,16 @@
 (def default-config-file "_config.json")
 
 
-(def custom-formatter (f/formatter "yyyy-MM-dd"))
+(def custom-formatter (f/formatter "yyyy-MM-dd HH:mm:ss"))
 
 (defn now-str []
   (f/unparse custom-formatter (l/local-now)))
+
+(defn unparse-time
+  [time-str]
+  (f/parse custom-formatter time-str))
+
+
 
 (defn show-banner []
   (println "EXPERIENCE WALL"))
@@ -124,60 +130,77 @@
 
 (defn parse-experience-file
   [file-path]
+  
+  (defn add-result
+    [result info]
+    (let [key (subs (first info) 2)
+          value (subs (second info) 1)]
+      (assoc result
+             key
+             (if value
+               (if (= (str/trim value) "")
+                 ""
+                 value)
+               ""))))
+  
   (let [raw-file-content (slurp (io/file file-path))
         info-str (first (str/split raw-file-content #"#---"))
         experience-str (second (str/split raw-file-content #"#---"))
         info-rows (str/split info-str #"\n")
         info-map (loop [infos info-rows
                         result {}]
-                   (let [info (str/split (first infos) #":")]
+                   
+                   (let [info (let [split-point (.indexOf (first infos) ":")]
+                                (map join (split-at split-point (first infos))))]
                      (if (= (count infos) 1)
-                       (assoc result
-                              (subs (first info) 2)
-                              (if (second info)
-                                (if (= (str/trim (second info)) "")
-                                  ""
-                                  (second info))
-                                ""))
+                       (add-result result info)
                        (recur (rest infos)
-                              (assoc result
-                                     (subs (first info) 2)
-                                     (if (second info)
-                                       (if (= (str/trim (second info)) "")
-                                         ""
-                                         (second info))
-                                       ""))))))
+                              (add-result result info)))))
         title (get info-map "title")
         date (get info-map "date")
         tag (map str/trim (str/split (get info-map "tag") #","))]
     {:info info-map
      :experience (md-to-html-string experience-str)}))
 
-;;(println (parse-experience-file "/Users/tyan/DEMO/ewall/source/sds.md"))
+;;(parse-experience-file "/home/tyan/DEMO/BNBB/source/www.md")
 
+(defn parse-experience-list
+  [files-path]
+  (map (fn [file-path]
+         (parse-experience-file file-path)) files-path))
 
+(defn sort-experience-by-time
+  [experiences]
+  (sort #(t/after?
+          (unparse-time (get (:info %1) "date"))
+          (unparse-time (get (:info %2) "date"))) experiences))
 
 
 (defn package-experience
-  [files-path per-page name]
-
-  (let [experience-packages-path (partition-all per-page files-path)]
-    (map (fn
-           [experience-package-path]
-           (map println experience-package-path)) experience-packages-path)
-    
+  [experiences to-path per-page name]
+  (let [experience-packages (partition-all per-page experiences)]
+    (map (fn [experience-package]
+           ) experience-packages)
+    ;; (map (fn
+    ;;        [experience-package-path]
+    ;;        (map println experience-package-path)) experience-packages-path)
+    ;;(println experience-packages-path)
     )
   
   )
 
 
-(release-wall "/Users/tyan/DEMO/ewall")
+;;(release-wall "/home/tyan/DEMO/BNBB")
 
 (defn release-dir-file
   [from-path to-path per-page name]
   (check-path-exist-mkdir to-path)
-  (package-experience (list-md-file from-path) per-page name))
-
+  (package-experience
+   (sort-experience-by-time
+    (parse-experience-list (list-md-file from-path)))
+   to-path
+   per-page
+   name))
 
 ;; (defn release-dir-file
 ;;   [from-path to-path]
