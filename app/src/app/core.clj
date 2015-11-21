@@ -193,20 +193,26 @@
 
 
 
-
-
 (defn release-dir-file
   [from-path to-path per-page name]
   (check-path-exist-mkdir to-path)
-  (map (fn [experience-package]
-         (spit (join-path to-path (first experience-package))
-               (generate-string (second experience-package)
-                                {:pretty true})))
-       (package-experience
-           (sort-experience-by-time
-            (parse-experience-list (list-md-file from-path))) per-page name)))
+  (doall (map (fn [experience-package]
+                (spit (join-path to-path (first experience-package))
+                      (generate-string (second experience-package)
+                                       {:pretty true})))
+              (package-experience
+               (sort-experience-by-time
+                (parse-experience-list (list-md-file from-path))) per-page name))))
 
-(release-wall "/home/tyan/DEMO/BNBB")
+;;(release-wall "/home/tyan/DEMO/BNBB")
+
+
+(defn release-map-file
+  [category-list to-path]
+  (let [mapping {:categoryMap
+                 category-list}]
+    (spit to-path (generate-string mapping {:pretty true}))))
+
 
 (defn release-wall [path]
   (check-in-wall-project path)
@@ -214,14 +220,17 @@
         wall-path path]
     (check-has-source wall-path config)
     ;;TODO put all dir
-    (let [wall-dirs (list-dirs wall-path)]
-      (release-dir-file (join-path wall-path (:source_dir config))
-                        (join-path wall-path (:public_dir config))
-                        (:per_page config)
-                        "uncategorized"))))
-
-
-
+    (let [wall-dirs (list-dirs wall-path)
+          ;;FIXME
+          category-list (vector "uncategorized")]
+      (do
+       (release-dir-file (join-path wall-path (:source_dir config))
+                         (join-path wall-path (:public_dir config))
+                         (:per_page config)
+                         "uncategorized")
+       (release-map-file category-list
+                         (join-path (join-path wall-path (:public_dir config))
+                                    (:mapping_file config)))))))
 
 
 
