@@ -1,16 +1,16 @@
 (ns app.core
   (:gen-class)
-  (:use markdown.core
-        [clojure.string :only (join split)]
+  (:use [clojure.string :only (join split)]
         [io.aviso.ansi]
-        [io.aviso.logging])
-  (:require [clojure.java.io :as io]
-            [me.raynes.fs :as fs]
-            [cheshire.core :refer :all]
+        [io.aviso.logging]
+        markdown.core)
+  (:require [cheshire.core :refer :all]
             [clj-time.core :as t]
-            [clj-time.local :as l]
             [clj-time.format :as f]
-            [clojure.string :as str]))
+            [clj-time.local :as l]
+            [clojure.java.io :as io]
+            [clojure.string :as str]
+            [me.raynes.fs :as fs]))
 
 
 (def default-config-file "_config.json")
@@ -177,42 +177,36 @@
 
 
 (defn package-experience
-  [experiences to-path per-page name]
-  (let [experience-packages (partition-all per-page experiences)]
-    (map (fn [experience-package]
-           ) experience-packages)
-    ;; (map (fn
-    ;;        [experience-package-path]
-    ;;        (map println experience-package-path)) experience-packages-path)
-    ;;(println experience-packages-path)
-    )
-  
-  )
+  [experiences per-page name]
+  (loop [experience-packages (partition-all per-page experiences)
+         number 0
+         result {}]
+    (if (= (count experience-packages) 1)
+      (assoc result
+             (str name "-" number ".json")
+             (first experience-packages))
+      (recur (rest experience-packages)
+             (+ 1 number)
+             (assoc result
+                    (str name "-" number)
+                    (first experience-packages))))))
 
 
-;;(release-wall "/home/tyan/DEMO/BNBB")
+
+
 
 (defn release-dir-file
   [from-path to-path per-page name]
   (check-path-exist-mkdir to-path)
-  (package-experience
-   (sort-experience-by-time
-    (parse-experience-list (list-md-file from-path)))
-   to-path
-   per-page
-   name))
+  (map (fn [experience-package]
+         (spit (join-path to-path (first experience-package))
+               (generate-string (second experience-package)
+                                {:pretty true})))
+       (package-experience
+           (sort-experience-by-time
+            (parse-experience-list (list-md-file from-path))) per-page name)))
 
-;; (defn release-dir-file
-;;   [from-path to-path]
-;;   (check-path-exist-mkdir to-path)
-;;   (loop [files (list-md-file from-path)]
-;;     (if (>= 1 (count files))
-;;       (let [md-file (first files)
-;;             file-body-name (take-file-body-name md-file)]
-;;         (println md-file)
-;;         (md-to-html md-file (str to-path "/" file-body-name ".html")))
-;;       (recur (rest files)))))
-
+(release-wall "/home/tyan/DEMO/BNBB")
 
 (defn release-wall [path]
   (check-in-wall-project path)
@@ -227,7 +221,7 @@
                         "uncategorized"))))
 
 
-;;(release-wall "/home/tyan/DEMO/BNBB")
+
 
 
 
