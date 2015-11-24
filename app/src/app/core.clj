@@ -59,6 +59,20 @@
   [path]
   (filter fs/directory? (fs/list-dir path)))
 
+(defn list-dirs-str
+  [path]
+  (map str (list-dirs path)))
+
+
+(defn list-dirs-name
+  [path]
+  (map (fn [path-str]
+         (last (split path-str #"/")))
+       (list-dirs-str path)))
+
+
+
+
 (defn list-files
   [path]
   (filter fs/file? (fs/list-dir path)))
@@ -72,13 +86,6 @@
   [paths]
   (map str paths))
 
-
-(defn walk-source-dir
-  [root dirs files]
-  (println "x")
-  (println (str root))
-  (println (str dirs))
-  (println (first files)))
 
 (defn check-in-wall-project [path]
   (if-not (fs/exists? (join-path path default-config-file))
@@ -196,16 +203,22 @@
 (defn release-dir-file
   [from-path to-path per-page name]
   (check-path-exist-mkdir to-path)
-  (doall (map (fn [experience-package]
-                (spit (join-path to-path (first experience-package))
-                      (generate-string (second experience-package)
-                                       {:pretty true})))
-              (package-experience
-               (sort-experience-by-time
-                (parse-experience-list (list-md-file from-path))) per-page name))))
+  (let [experiences (parse-experience-list (list-md-file from-path))]
+    (doall (map (fn [experience-package]
+                  (spit (join-path to-path (first experience-package))
+                        (generate-string (second experience-package)
+                                         {:pretty true})))
+                (package-experience
+                 (map-indexed (fn [idx itm]
+                                (assoc itm
+                                       :index
+                                       idx))
+                              (sort-experience-by-time
+                               experiences)) per-page name)))
+    (count experiences)))
+
 
 ;;(release-wall "/home/tyan/DEMO/BNBB")
-
 
 (defn release-map-file
   [category-list to-path]
@@ -213,26 +226,28 @@
                  category-list}]
     (spit to-path (generate-string mapping {:pretty true}))))
 
-
 (defn release-wall [path]
   (check-in-wall-project path)
   (let [config (read-project-config path)
         wall-path path]
     (check-has-source wall-path config)
     ;;TODO put all dir
-    (let [wall-dirs (list-dirs wall-path)
+    (let [category-dirs (list-dirs-name (join-path wall-path (:source_dir config)))
           ;;FIXME
-          category-list (vector "uncategorized")]
-      (do
-       (release-dir-file (join-path wall-path (:source_dir config))
-                         (join-path wall-path (:public_dir config))
-                         (:per_page config)
-                         "uncategorized")
-       (release-map-file category-list
-                         (join-path (join-path wall-path (:public_dir config))
-                                    (:mapping_file config)))))))
-
-
+          category-list {"uncategorized"
+                         (release-dir-file (join-path wall-path (:source_dir config))
+                                           (join-path wall-path (:public_dir config))
+                                           (:per_page config)
+                                           "uncategorized")}]
+      (release-map-file (reduce merge  category-list (map (fn [dir]
+                                                            {dir
+                                                             (release-dir-file (join-path wall-path (:source_dir config) dir)
+                                                                               (join-path wall-path (:public_dir config) dir)
+                                                                               (:per_page config)
+                                                                               dir)})
+                                                          category-dirs))
+                        (join-path (join-path wall-path (:public_dir config))
+                                   (:mapping_file config))))))
 
 (defn new-ewall
   [rest]
