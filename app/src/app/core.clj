@@ -221,9 +221,11 @@
 ;;(release-wall "/home/tyan/DEMO/BNBB")
 
 (defn release-map-file
-  [category-list to-path]
+  [category-list to-path config]
   (let [mapping {:categoryMap
-                 category-list}]
+                 category-list
+                 :perPage
+                 (:per_page config)}]
     (spit to-path (generate-string mapping {:pretty true}))))
 
 (defn release-wall [path]
@@ -236,7 +238,7 @@
           ;;FIXME
           category-list {"uncategorized"
                          (release-dir-file (join-path wall-path (:source_dir config))
-                                           (join-path wall-path (:public_dir config))
+                                           (join-path wall-path (:public_dir config) "uncategorized")
                                            (:per_page config)
                                            "uncategorized")}]
       (release-map-file (reduce merge  category-list (map (fn [dir]
@@ -247,7 +249,8 @@
                                                                                dir)})
                                                           category-dirs))
                         (join-path (join-path wall-path (:public_dir config))
-                                   (:mapping_file config))))))
+                                   (:mapping_file config))
+                        config))))
 
 (defn new-ewall
   [rest]
