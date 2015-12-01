@@ -1,6 +1,7 @@
 (ns app.core
   (:gen-class)
-  (:use [clojure.string :only (join split)]
+  (:use [clojure.java.shell :only [sh]]
+        [clojure.string :only (join split)]
         [io.aviso.ansi]
         [io.aviso.logging]
         markdown.core)
@@ -252,6 +253,15 @@
                                    (:mapping_file config))
                         config))))
 
+(defn clone-default-theme
+  [path resp-url]
+  (sh "git" "clone" resp-url
+      :dir path))
+
+;; (println (clone-default-theme
+;;           "/home/tyan/DEMO/BNBB/themes"
+;;           "git@github.com:Experience-Wall/sprout-theme.git"))
+
 (defn new-ewall
   [rest]
   (if (< (count rest) 1)
@@ -261,11 +271,22 @@
       (spit (join-path-cwd default-config-file) (slurp (io/resource
                                                         default-config-file))))
     (do
-      (fs/mkdir (join-path-cwd (first rest)))
-      (fs/mkdir (join-path-cwd (join-path (first rest) (:source_dir default-config))))
-      (fs/mkdir (join-path-cwd (join-path (first rest) (:public_dir default-config))))
-      (spit (join-path-cwd (join-path (first rest) default-config-file)) (slurp (io/resource
-                                                                                 default-config-file))))))
+      (do
+       (fs/mkdir (join-path-cwd (first rest)))
+       (fs/mkdir (join-path-cwd (join-path (first rest) (:source_dir default-config))))
+       (fs/mkdir (join-path-cwd (join-path (first rest) (:public_dir default-config))))
+       (fs/mkdir (join-path-cwd (join-path (first rest) "themes")))
+       
+       (spit (join-path-cwd (join-path (first rest) default-config-file)) (slurp (io/resource
+                                                                                  default-config-file))))
+      (clone-default-theme
+       (join-path (first rest) "themes") (:default_theme default-config)))
+    
+))
+
+
+
+;;(new-ewall ["/home/tyan/DEMO/BNBB"])
 
 (defn new-experience
   [rest]
@@ -287,6 +308,15 @@
   (println))
 
 (defn release-experience
+  [rest]
+  (println))
+
+
+
+;;deploy
+
+
+(defn deploy
   [rest]
   (println))
 
