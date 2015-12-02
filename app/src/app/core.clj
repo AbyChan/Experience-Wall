@@ -359,8 +359,14 @@
     ;;(git path "commit" "-m" "inital commit")
     ))
 
+
+
 (defn push-to-github
   [path url]
+  (println
+   (str
+    (bold
+     (green (str "Deploy to Github => " url)))))
   (do
     (sh "git" "init" :dir path)
     (sh "git" "add" "-A" :dir path)
