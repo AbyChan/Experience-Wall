@@ -78,6 +78,32 @@
   [path]
   (filter fs/file? (fs/list-dir path)))
 
+(defn list-files-str
+  [path]
+  (map str (list-files path)))
+
+(defn list-files-name
+  [path]
+  (map (fn [path-str]
+         (last (split path-str #"/")))
+       (list-files-str path)))
+;;(list-files "/home/tyan/DEMO/bb/themes/sprout-theme")
+
+(defn put-dir
+  [from src]
+  (doall (map (fn [name]
+                (fs/copy (join-path from name)
+                         (join-path src name)))
+              (list-files-name from)))
+  (doall (map (fn [dir-name]
+                (if (fs/exists? (join-path src dir-name))
+                  (fs/delete-dir (join-path src dir-name)))
+                (fs/copy-dir (join-path from dir-name)
+                             (join-path src dir-name)))
+              (list-dirs-name from))))
+
+(put-dir "/home/tyan/DEMO/bb/themes/sprout-theme"
+         "/home/tyan/DEMO/bb/public")
 
 (defn paths-to-name
   [paths]
@@ -255,8 +281,14 @@
 
 (defn clone-default-theme
   [path resp-url]
+  (println (str
+            (bold
+             (green "git clone default theme [sprout-theme]"))))
   (sh "git" "clone" resp-url
-      :dir path))
+      :dir path)
+  (println (str
+            (bold
+             (green "Clone Done!")))))
 
 ;; (println (clone-default-theme
 ;;           "/home/tyan/DEMO/BNBB/themes"
@@ -280,7 +312,7 @@
        (spit (join-path-cwd (join-path (first rest) default-config-file)) (slurp (io/resource
                                                                                   default-config-file))))
       (clone-default-theme
-       (join-path (first rest) "themes") (:default_theme default-config)))
+       (join-path (first rest) "themes") (:rep (:default_theme default-config))))
     
 ))
 
@@ -314,11 +346,54 @@
 
 
 ;;deploy
+(defn setup-git
+  [path]
+  ;; (defn git
+  ;;   [x-path & args]
+  ;;   (sh "git" args :dir (str x-path)))
+  (do
+    (sh "git" "init" :dir path)
+    (sh "git" "add" "-A" :dir path)
+    (sh "git" "commit" "-m" "inital commit" :dir path)
+    ;;(git path "add" "-A")
+    ;;(git path "commit" "-m" "inital commit")
+    ))
+
+(defn push-to-github
+  [path url]
+  (do
+    (sh "git" "init" :dir path)
+    (sh "git" "add" "-A" :dir path)
+    ;;todo
+    (sh "git" "commit" "-m" (str (now-str) "-update") :dir path)
+    (sh "git" "push" "-u" url "master:gh-pages" "--force" :dir path)
+    ))
+
+;;(setup-git "/home/tyan/DEMO/bb/public")
+
+(defn deploy-now
+  [root-path config]
+  (let [public-dir (join-path root-path (:public_dir config))]
+
+    (if-not (fs/exists? (join-path public-dir ".git"))
+      (setup-git public-dir))
+    (put-dir
+     (join-path root-path
+                "themes"
+                (:name (:default_theme config)))
+     (join-path root-path (:public_dir config)))
+    (push-to-github public-dir (:rep (:deploy config)))))
+
 
 
 (defn deploy
   [rest]
+  (let [root-path (first rest)]
+    (deploy-now root-path (read-project-config root-path)))
+  
   (println))
+
+;;(deploy (list "/home/tyan/DEMO/bb"))
 
 (defn -main
   [& args]
