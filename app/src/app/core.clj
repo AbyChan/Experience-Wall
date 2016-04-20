@@ -225,24 +225,24 @@
                     (str name "-" number)
                     (first experience-packages))))))
 
-
-
 (defn release-dir-file
   [from-path to-path per-page name]
   (check-path-exist-mkdir to-path)
-  (let [experiences (parse-experience-list (list-md-file from-path))]
-    (doall (map (fn [experience-package]
-                  (spit (join-path to-path (first experience-package))
-                        (generate-string (second experience-package)
-                                         {:pretty true})))
-                (package-experience
-                 (map-indexed (fn [idx itm]
-                                (assoc itm
-                                       :index
-                                       idx))
-                              (sort-experience-by-time
-                               experiences)) per-page name)))
-    (count experiences)))
+  (let [experiences (parse-experience-list (list-md-file from-path))
+        ex-count (count experiences)]
+    (if (> ex-count 0)
+      (doall (map (fn [experience-package]
+                    (spit (join-path to-path (first experience-package))
+                          (generate-string (second experience-package)
+                                           {:pretty true})))
+                  (package-experience
+                   (map-indexed (fn [idx itm]
+                                  (assoc itm
+                                         :index
+                                         idx))
+                                (sort-experience-by-time
+                                 experiences)) per-page name))))
+    ex-count))
 
 
 ;;(release-wall "/home/tyan/DEMO/BNBB")
@@ -268,9 +268,9 @@
                                            (join-path wall-path (:public_dir config) "uncategorized")
                                            (:per_page config)
                                            "uncategorized")}]
-      (release-map-file (reduce merge  category-list (map (fn [dir]
-                                                            {dir
-                                                             (release-dir-file (join-path wall-path (:source_dir config) dir)
+      (release-map-file (reduce merge category-list (map (fn [dir]
+                                                           {dir
+                                                            (release-dir-file (join-path wall-path (:source_dir config) dir)
                                                                                (join-path wall-path (:public_dir config) dir)
                                                                                (:per_page config)
                                                                                dir)})
@@ -400,12 +400,13 @@
   (println))
 
 ;;(deploy (list "/home/tyan/DEMO/bb"))
-
+;;(release-wall "/Users/soul/experience")
 (defn -main
   [& args]
   (if (< (count args) 1)
     (show-help)
     (let [command (first args)]
+      (release-wall "/Users/soul/experience/")
       (cond
         (= command "init") (new-ewall (rest args))
         (= command "new") (new-experience (rest args))
