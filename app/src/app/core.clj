@@ -341,7 +341,7 @@
 
 (defn release-experience
   [rest]
-  (println))
+  (release-wall rest))
 
 
 
@@ -395,9 +395,7 @@
 (defn deploy
   [rest]
   (let [root-path (first rest)]
-    (deploy-now root-path (read-project-config root-path)))
-  
-  (println))
+    (deploy-now root-path (read-project-config root-path))))
 
 ;;(deploy (list "/home/tyan/DEMO/bb"))
 ;;(release-wall "/Users/soul/experience")
@@ -413,4 +411,5 @@
         (= command "release") (release-experience (rest args))
         (= command "serve") (start-server (rest args))
         (= command "help") (show-help)
+        (= command "deploy") (deploy (rest args))
         :else (show-help)))))
