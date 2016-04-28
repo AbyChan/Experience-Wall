@@ -341,7 +341,7 @@
 
 (defn release-experience
   [rest]
-  (release-wall rest))
+  (release-wall (first rest)))
 
 
 
