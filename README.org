@@ -10,3 +10,7 @@
 -   ewall release [path]
 -   ewall serve [path]
 -   ewall deploy [path]
+
+** theme 
+[[https://github.com/Experience-Wall/sprout-theme][-   sprout-theme]]
+
